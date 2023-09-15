@@ -30,7 +30,7 @@ def load_data(file, format='evimo2v2'):
     return meta, depth, mask
 
 if __name__ == '__main__':
-    file = '/Users/zhenglin/Desktop/code/scene_03_00_000000'
+    file = '/home/zhenglin/Documents/left_camera/sfm/eval/scene_03_00_000000'
     meta, depth, mask = load_data(file, format='evimo2v2')
     camera_x = []
     camera_y = []
@@ -66,20 +66,35 @@ if __name__ == '__main__':
         camera_z.append(w[2])
         camera_t.append( meta['full_trajectory'][idx]['cam']['ts'])
         # It would be better to plot the signals
-        if idx == (len(meta['full_trajectory']) - 2):
-            print(meta['full_trajectory'][idx]['cam']['ts'], idx+1)
-    # f2 = interp1d(camera_t, camera_y, kind = 'cubic')
-    # xnew = np.linspace(1, 25, num=10000, endpoint=True)
-    # plt.plot(camera_t, camera_z , '-')
-    # plt.show()
-    imu_x = []
-    imu_y = []
-    imu_z = []
-    imu_t = []
-    for idx in range(len(meta['imu']['/prophesee/left/imu'])):
-        imu_x.append(meta['imu']['/prophesee/left/imu'][idx]['angular_velocity']['x'])
-        imu_y.append(meta['imu']['/prophesee/left/imu'][idx]['angular_velocity']['y'])
-        imu_z.append(meta['imu']['/prophesee/left/imu'][idx]['angular_velocity']['z'])
-        imu_t.append(meta['imu']['/prophesee/left/imu'][idx]['ts'])
-    plt.plot(imu_t, imu_z , '-')
-    plt.show()
+    t_min = meta['full_trajectory'][0]['cam']['ts']
+    t_max = meta['full_trajectory'][len(meta['full_trajectory'])-2]['cam']['ts']
+    fx = interp1d(camera_t, camera_x, kind = 'cubic')
+    fy = interp1d(camera_t, camera_x, kind = 'cubic')
+    fz = interp1d(camera_t, camera_x, kind = 'cubic')
+    xnew = np.linspace(t_min, t_max, num=25737, endpoint=True)
+    # plt.figure(figsize=(30, 6))
+    # plt.xlabel('timestamp')
+    # plt.ylabel('agular velocity')
+    # plt.plot(camera_t, camera_x , color = 'g', label='camera_x')
+    # plt.plot(camera_t, camera_y , color = 'b', label='camera_y')
+    # plt.plot(camera_t, camera_z , color = 'r', label='camera_z')
+    # plt.legend()
+    # plt.savefig('camera_w.png')
+
+    # imu_x = []
+    # imu_y = []
+    # imu_z = []
+    # imu_t = []
+    # for idx in range(len(meta['imu']['/prophesee/left/imu'])):
+    #     imu_x.append(-meta['imu']['/prophesee/left/imu'][idx]['angular_velocity']['x'])
+    #     imu_y.append(-meta['imu']['/prophesee/left/imu'][idx]['angular_velocity']['y'])
+    #     imu_z.append(meta['imu']['/prophesee/left/imu'][idx]['angular_velocity']['z'])
+    #     imu_t.append(meta['imu']['/prophesee/left/imu'][idx]['ts'])
+    # plt.figure(figsize=(30, 6))
+    # plt.xlabel('timestamp')
+    # plt.ylabel('agular velocity')
+    # plt.plot(imu_t, imu_x, color = 'g', label='camera_x')
+    # plt.plot(imu_t, imu_y, color = 'b', label='camera_y')
+    # plt.plot(imu_t, imu_z, color = 'r', label='camera_z')
+    # plt.legend()
+    # plt.savefig('imu_w.png')
