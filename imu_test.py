@@ -1,3 +1,5 @@
+file = '/home/zhenglin/Documents/left_camera/sfm/eval/scene_03_00_000000'
+
 import os
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -30,7 +32,6 @@ def load_data(file, format='evimo2v2'):
     return meta, depth, mask
 
 if __name__ == '__main__':
-    file = '/home/zhenglin/Documents/left_camera/sfm/eval/scene_03_00_000000'
     meta, depth, mask = load_data(file, format='evimo2v2')
     camera_x = []
     camera_y = []
