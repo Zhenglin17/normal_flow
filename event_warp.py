@@ -28,15 +28,31 @@ def load_events(path):
     xy = np.load(directory + '/dataset_events_xy.npy')
     return p, t, xy
 
-def find_events_slices(t_low, t_up, events):
-    index_low = np.searchsorted(events[:, 2], t_low)
-    index_up = np.searchsorted(events[:, 2], t_up)
-    return events[index_low:index_up, :]
+class Interval_warp():
+    def __init__(self, index, RV_index, events, meta) -> None:
+        self.index = index
+        self.RV_index = RV_index
 
-def find_time_stamps(index, meta):
-    t_low = meta['full_trajectory'][index]['cam']['ts']
-    t_up = meta['full_trajectory'][index+1]['cam']['ts']
-    return t_low, t_up
+    def find_time_stamps(self):
+        t_low = meta['full_trajectory'][self.index]['cam']['ts']
+        t_up = meta['full_trajectory'][self.index+1]['cam']['ts']
+        return t_low, t_up
+    
+    def find_events_slices(self):
+        t_low, t_up = self.find_events_slices()
+        index_low = np.searchsorted(events[:, 2], t_low)
+        index_up = np.searchsorted(events[:, 2], t_up)
+        return events[index_low:index_up, :]
+    
+    def relative_pose(self):
+        q_1 = meta['full_trajectory'][self.idx]['cam']['pos']['q']
+        q_2 = meta['full_trajectory'][idx+1]['cam']['pos']['q']
+        RV_pose = ...
+        index_pose = ...
+        relative_pose = ...
+
+    def warp_events(self):
+        events_slice = self.find_events_slices()
 
 if __name__ == '__main__':
     p, t, xy = load_events(path)
