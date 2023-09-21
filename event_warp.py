@@ -1,4 +1,4 @@
-path = '/home/zhenglin/Documents/left_camera/sfm/eval/scene_03_00_000000'
+path = '/Users/zhenglin/Documents/normal_flow/scene_03_00_000000'
 
 import numpy as np
 import os
@@ -28,17 +28,31 @@ def load_events(path):
     xy = np.load(directory + '/dataset_events_xy.npy')
     return p, t, xy
 
+def find_events_slices(t_low, t_up, events):
+    index_low = np.searchsorted(events[:, 2], t_low)
+    index_up = np.searchsorted(events[:, 2], t_up)
+    return events[index_low:index_up, :]
+
+def find_time_stamps(index, meta):
+    t_low = meta['full_trajectory'][index]['cam']['ts']
+    t_up = meta['full_trajectory'][index+1]['cam']['ts']
+    return t_low, t_up
+
 if __name__ == '__main__':
     p, t, xy = load_events(path)
-    print(p.shape, t.shape, xy.shape)
-    print(xy[0].max(), xy[1].max())
-    print(xy[0].min(), xy[1].min())
-    events = np.concatenate((xy[6000:20000, :], t[6000:20000].reshape(-1, 1), p[6000:20000].reshape(-1, 1)), axis=1)
+    # print(p.shape, t.shape, xy.shape)
+    # print(xy[0].max(), xy[1].max())
+    # print(xy[0].min(), xy[1].min())
+    events = np.concatenate((xy[:, 1].reshape(-1, 1), xy[:, 0].reshape(-1, 1), t.reshape(-1, 1), p.reshape(-1, 1)), axis=1)
     print(events.shape)
-    volume = gen_discretized_event_volume(events=torch.from_numpy(events), vol_size=[10, 640, 480])
-    print(volume.shape)
-    image = gen_event_images(volume[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
-    print(image.shape)
-    cv.imshow('image', image)
-    cv.waitKey(0)
-    cv.destroyWindow()
+    meta, depth, mask = load_data(path, format='evimo2v2')
+    t_low, t_up = find_time_stamps(4000, meta=meta)
+    event_slice = find_events_slices(t_low, t_up, events)
+    print(event_slice.shape)
+    # volume = gen_discretized_event_volume(events=torch.from_numpy(events), vol_size=[10, 480, 640])
+    # print(volume.shape)
+    # image = gen_event_images(volume[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
+    # print(image.shape)
+    # cv.imshow('image', image)
+    # cv.waitKey(0)
+    # cv.destroyWindow()
