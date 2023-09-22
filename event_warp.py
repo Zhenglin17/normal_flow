@@ -37,8 +37,8 @@ class Interval_warp():
         self.meta = meta
 
     def find_time_stamps(self):
-        t_low = meta['full_trajectory'][self.index]['cam']['ts']
-        t_up = meta['full_trajectory'][self.index+1]['cam']['ts']
+        t_low = self.meta['full_trajectory'][self.index]['cam']['ts']
+        t_up = self.meta['full_trajectory'][self.index+1]['cam']['ts']
         return t_low, t_up
     
     def find_events_slices(self):
@@ -48,22 +48,29 @@ class Interval_warp():
         return self.events[index_low:index_up, :]
     
     def get_pose(self):
-        q_1 = meta['full_trajectory'][self.idx]['cam']['pos']['q']
-        q_2 = meta['full_trajectory'][self.idx+1]['cam']['pos']['q']
+        q_1 = self.meta['full_trajectory'][self.idx]['cam']['pos']['q']
+        q_2 = self.meta['full_trajectory'][self.idx+1]['cam']['pos']['q']
         R_wc1 = R.from_quat([q_1['x'], q_1['y'], q_1['z'], q_1['w'],])
         #rotation matrix camera2 to world frame
         R_wc2 = R.from_quat([q_2['x'], q_2['y'], q_2['z'], q_2['w'],])
         R_wc1 = R_wc1.as_matrix()
         R_wc2 = R_wc2.as_matrix()
-        T_1 = meta['full_trajectory'][self.idx]['cam']['pos']['t']
-        T_2 = meta['full_trajectory'][self.idx]['cam']['pos']['t']
+        T_1 = self.meta['full_trajectory'][self.idx]['cam']['pos']['t']
+        T_2 = self.meta['full_trajectory'][self.idx]['cam']['pos']['t']
         T_wc1 = np.array([T_1['x'], T_1['y'], T_1['z']])
         T_wc2 = np.array([T_2['x'], T_2['y'], T_2['z']])
         return R_wc1, R_wc2, T_wc1, T_wc2
 
     def warp_events(self):
-        events_slice = self.find_events_slices()
+        event_slice = self.find_events_slices()
         R_wc1, R_wc2, T_wc1, T_wc2 = self.get_pose()
+        m = self.meta['meta']
+        K = np.array([[m['fx'], 0, m['cx']],
+                      [0, m['fy'], m['cy']],
+                      [0, 0, 1]])
+        distCoeffs = np.array([m['k1'], m['k2'], m['p1'], m['p2']])
+        pts = np.concatenate((event_slice[:, 0:2].T), np.ones(1, len(event_slice)), axis=0)
+        undistort_pts = cv.undistortPoints(pts, K, distCoeffs)
         
 
 if __name__ == '__main__':
