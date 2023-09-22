@@ -6,6 +6,7 @@ import cv2 as cv
 from utils import gen_discretized_event_volume
 import torch
 from utils import gen_event_images
+from scipy.spatial.transform import Rotation as R
 
 def load_data(file, format='evimo2v2'):
     if format == 'evimo2v1':
@@ -32,6 +33,8 @@ class Interval_warp():
     def __init__(self, index, RV_index, events, meta) -> None:
         self.index = index
         self.RV_index = RV_index
+        self.events = events
+        self.meta = meta
 
     def find_time_stamps(self):
         t_low = meta['full_trajectory'][self.index]['cam']['ts']
@@ -42,17 +45,26 @@ class Interval_warp():
         t_low, t_up = self.find_events_slices()
         index_low = np.searchsorted(events[:, 2], t_low)
         index_up = np.searchsorted(events[:, 2], t_up)
-        return events[index_low:index_up, :]
+        return self.events[index_low:index_up, :]
     
-    def relative_pose(self):
+    def get_pose(self):
         q_1 = meta['full_trajectory'][self.idx]['cam']['pos']['q']
-        q_2 = meta['full_trajectory'][idx+1]['cam']['pos']['q']
-        RV_pose = ...
-        index_pose = ...
-        relative_pose = ...
+        q_2 = meta['full_trajectory'][self.idx+1]['cam']['pos']['q']
+        R_wc1 = R.from_quat([q_1['x'], q_1['y'], q_1['z'], q_1['w'],])
+        #rotation matrix camera2 to world frame
+        R_wc2 = R.from_quat([q_2['x'], q_2['y'], q_2['z'], q_2['w'],])
+        R_wc1 = R_wc1.as_matrix()
+        R_wc2 = R_wc2.as_matrix()
+        T_1 = meta['full_trajectory'][self.idx]['cam']['pos']['t']
+        T_2 = meta['full_trajectory'][self.idx]['cam']['pos']['t']
+        T_wc1 = np.array([T_1['x'], T_1['y'], T_1['z']])
+        T_wc2 = np.array([T_2['x'], T_2['y'], T_2['z']])
+        return R_wc1, R_wc2, T_wc1, T_wc2
 
     def warp_events(self):
         events_slice = self.find_events_slices()
+        R_wc1, R_wc2, T_wc1, T_wc2 = self.get_pose()
+        
 
 if __name__ == '__main__':
     p, t, xy = load_events(path)
