@@ -42,21 +42,21 @@ class Interval_warp():
         return t_low, t_up
     
     def find_events_slices(self):
-        t_low, t_up = self.find_events_slices()
+        t_low, t_up = self.find_time_stamps()
         index_low = np.searchsorted(events[:, 2], t_low)
         index_up = np.searchsorted(events[:, 2], t_up)
         return self.events[index_low:index_up, :]
     
     def get_pose(self):
-        q_1 = self.meta['full_trajectory'][self.idx]['cam']['pos']['q']
-        q_2 = self.meta['full_trajectory'][self.idx+1]['cam']['pos']['q']
+        q_1 = self.meta['full_trajectory'][self.index]['cam']['pos']['q']
+        q_2 = self.meta['full_trajectory'][self.index+1]['cam']['pos']['q']
         R_wc1 = R.from_quat([q_1['x'], q_1['y'], q_1['z'], q_1['w'],])
         #rotation matrix camera2 to world frame
         R_wc2 = R.from_quat([q_2['x'], q_2['y'], q_2['z'], q_2['w'],])
         R_wc1 = R_wc1.as_matrix()
         R_wc2 = R_wc2.as_matrix()
-        T_1 = self.meta['full_trajectory'][self.idx]['cam']['pos']['t']
-        T_2 = self.meta['full_trajectory'][self.idx]['cam']['pos']['t']
+        T_1 = self.meta['full_trajectory'][self.index]['cam']['pos']['t']
+        T_2 = self.meta['full_trajectory'][self.index]['cam']['pos']['t']
         T_wc1 = np.array([T_1['x'], T_1['y'], T_1['z']])
         T_wc2 = np.array([T_2['x'], T_2['y'], T_2['z']])
         return R_wc1, R_wc2, T_wc1, T_wc2
@@ -69,8 +69,10 @@ class Interval_warp():
                       [0, m['fy'], m['cy']],
                       [0, 0, 1]])
         distCoeffs = np.array([m['k1'], m['k2'], m['p1'], m['p2']])
-        pts = np.concatenate((event_slice[:, 0:2].T), np.ones(1, len(event_slice)), axis=0)
+        pts = event_slice[:, np.newaxis, 0:2]
+        print(pts.shape)
         undistort_pts = cv.undistortPoints(pts, K, distCoeffs)
+        return undistort_pts.shape
         
 
 if __name__ == '__main__':
@@ -81,9 +83,13 @@ if __name__ == '__main__':
     events = np.concatenate((xy[:, 1].reshape(-1, 1), xy[:, 0].reshape(-1, 1), t.reshape(-1, 1), p.reshape(-1, 1)), axis=1)
     print(events.shape)
     meta, depth, mask = load_data(path, format='evimo2v2')
-    t_low, t_up = find_time_stamps(4000, meta=meta)
-    event_slice = find_events_slices(t_low, t_up, events)
-    print(event_slice.shape)
+    warp = Interval_warp(index=3001, RV_index=3000, events=events, meta=meta)
+    # t_low, t_up = warp.find_time_stamps()
+    # print(t_up-t_low)
+    # event_slice = warp.find_events_slices()
+    # print(event_slice.shape)
+    # R_wc1, R_wc2, T_wc1, T_wc2 = warp.get_pose()
+    print(warp.warp_events())
     # volume = gen_discretized_event_volume(events=torch.from_numpy(events), vol_size=[10, 480, 640])
     # print(volume.shape)
     # image = gen_event_images(volume[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
