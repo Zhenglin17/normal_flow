@@ -1,4 +1,4 @@
-path = '/Users/zhenglin/Documents/normal_flow/scene_03_00_000000'
+path = '/home/zhenglin/Documents/left_camera/sfm/eval/scene_03_00_000000'
 
 import numpy as np
 import os
@@ -68,11 +68,21 @@ class Interval_warp():
         K = np.array([[m['fx'], 0, m['cx']],
                       [0, m['fy'], m['cy']],
                       [0, 0, 1]])
-        distCoeffs = np.array([m['k1'], m['k2'], m['p1'], m['p2']])
-        pts = event_slice[:, np.newaxis, 0:2]
-        print(pts.shape)
-        undistort_pts = cv.undistortPoints(pts, K, distCoeffs)
-        return undistort_pts.shape
+        Coeffs = np.array([m['k1'], m['k2'], m['p1'], m['p2']])
+        # print(K, Coeffs)
+        # pts = event_slice[:, np.newaxis, 0:2]
+        pts = event_slice[:, 0:2].reshape(1, -1, 2)
+        undistort_pts = cv.undistortPoints(pts, K, Coeffs, P=K)
+        undistort_pts = np.squeeze(undistort_pts)
+        points_c2 = np.concatenate((undistort_pts, np.ones((len(undistort_pts), 1))), axis=1)
+        R_c1c2 = R_wc1.T @ R_wc2
+        points_c1 = (R_c1c2 @ points_c2.T).T
+        # points_c1[:, [0, 1]] = points_c1[:, [1, 0]]
+        print(points_c1[:, 0].min(), points_c1[:, 1].min(), points_c1[:, 2].min())
+        print(points_c1[:, 0].max(), points_c1[:, 1].max(), points_c1[:, 2].max())
+        pts_c1 = cv.projectPoints(points_c1, rvec=np.array([0.0, 0.0, 0.0]), tvec=np.array([0.0, 0.0, 0.0]), cameraMatrix=K, distCoeffs=Coeffs)[0]
+        pts_c1 = np.squeeze(pts_c1)
+        return pts_c1
         
 
 if __name__ == '__main__':
@@ -89,7 +99,9 @@ if __name__ == '__main__':
     # event_slice = warp.find_events_slices()
     # print(event_slice.shape)
     # R_wc1, R_wc2, T_wc1, T_wc2 = warp.get_pose()
-    print(warp.warp_events())
+    pts = warp.warp_events()
+    print(pts[:, 0].min(), pts[:, 0].max())
+    print(pts[:, 1].min(), pts[:, 1].max())
     # volume = gen_discretized_event_volume(events=torch.from_numpy(events), vol_size=[10, 480, 640])
     # print(volume.shape)
     # image = gen_event_images(volume[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
