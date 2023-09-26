@@ -81,7 +81,7 @@ class Interval_warp():
         print(points_c1[:, 0].min(), points_c1[:, 1].min(), points_c1[:, 2].min())
         print(points_c1[:, 0].max(), points_c1[:, 1].max(), points_c1[:, 2].max())
         pts_c1 = cv.projectPoints(points_c1, rvec=np.array([0.0, 0.0, 0.0]), tvec=np.array([0.0, 0.0, 0.0]), cameraMatrix=K, distCoeffs=Coeffs)[0]
-        pts_c1 = np.squeeze(pts_c1)
+        pts_c1 = np.squeeze(pts_c1)/10e12
         return pts_c1
         
 
