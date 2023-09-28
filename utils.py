@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 
-
 def normalize_event_image(event_image, clamp_val=2., normalize_events=True):
     if not normalize_events:
         return event_image

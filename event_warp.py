@@ -48,18 +48,19 @@ class Interval_warp():
         return self.events[index_low:index_up, :]
     
     def get_pose(self):
-        q_1 = self.meta['full_trajectory'][self.index]['cam']['pos']['q']
-        q_2 = self.meta['full_trajectory'][self.index+1]['cam']['pos']['q']
+        q_1 = self.meta['full_trajectory'][self.RV_index]['cam']['pos']['q']
+        q_2 = self.meta['full_trajectory'][self.index]['cam']['pos']['q']
         R_wc1 = R.from_quat([q_1['x'], q_1['y'], q_1['z'], q_1['w'],])
         #rotation matrix camera2 to world frame
         R_wc2 = R.from_quat([q_2['x'], q_2['y'], q_2['z'], q_2['w'],])
         R_wc1 = R_wc1.as_matrix()
         R_wc2 = R_wc2.as_matrix()
-        T_1 = self.meta['full_trajectory'][self.index]['cam']['pos']['t']
+        T_1 = self.meta['full_trajectory'][self.RV_index]['cam']['pos']['t']
         T_2 = self.meta['full_trajectory'][self.index]['cam']['pos']['t']
         T_wc1 = np.array([T_1['x'], T_1['y'], T_1['z']])
         T_wc2 = np.array([T_2['x'], T_2['y'], T_2['z']])
         R_c1c2 = R_wc1.T @ R_wc2
+        print(R_c1c2)
         return R_c1c2
 
     def warp_events(self):
@@ -87,6 +88,23 @@ class Interval_warp():
         index_u = np.searchsorted(self.events[:, 2], t_u)
         return self.events[index_l:index_u, :]
         
+def generate_warp(w, c, events, meta):
+    warp = Interval_warp(index=c, RV_index=w, events=events, meta=meta)
+    # t_low, t_up = warp.find_time_stamps()
+    # print(t_up-t_low)
+    # event_slice = warp.find_events_slices()
+    # print(event_slice.shape)
+    # R_wc1, R_wc2, T_wc1, T_wc2 = warp.get_pose()
+    pts = warp.warp_events()
+    index = np.where((pts[:, 0]<640) & (pts[:, 0]>0) & (pts[:, 1]>0) & (pts[:, 1]<480))
+    print(index[0].shape[0])
+    pts = pts[index[0]]
+    pts_RV = warp.get_RV_events()
+    pts_index = warp.find_events_slices()
+    pts[:, [0, 1]] = pts[:, [1, 0]]
+    pts_index[:, [0, 1]] = pts_index[:, [1, 0]]
+    pts_RV[:, [0, 1]] = pts_RV[:, [1, 0]]
+    return pts, pts_index, pts_RV, index[0].shape[0]
 
 if __name__ == '__main__':
     p, t, xy = load_events(path)
@@ -96,33 +114,22 @@ if __name__ == '__main__':
     events = np.concatenate((xy[:, 0].reshape(-1, 1), xy[:, 1].reshape(-1, 1), t.reshape(-1, 1), p.reshape(-1, 1)), axis=1)
     print(events.shape)
     meta, depth, mask = load_data(path, format='evimo2v2')
-    warp = Interval_warp(index=5000, RV_index=1000, events=events, meta=meta)
-    # t_low, t_up = warp.find_time_stamps()
-    # print(t_up-t_low)
-    # event_slice = warp.find_events_slices()
-    # print(event_slice.shape)
-    # R_wc1, R_wc2, T_wc1, T_wc2 = warp.get_pose()
-    pts = warp.warp_events()
-    index = np.where((pts[:, 0]<640) & (pts[:, 0]>0) & (pts[:, 1]>0) & (pts[:, 1]<480))
-    # print(index)
-    pts = pts[index]
-    print(pts[:, 0].min(), pts[:, 0].max())
-    print(pts[:, 1].min(), pts[:, 1].max())
-    pts_RV = warp.get_RV_events()
-    pts_index = warp.find_events_slices()
-    pts[:, [0, 1]] = pts[:, [1, 0]]
-    pts_index[:, [0, 1]] = pts_index[:, [1, 0]]
-    pts_RV[:, [0, 1]] = pts_RV[:, [1, 0]]
-    print(pts_RV.shape, pts_index.shape, pts.shape, pts)
-    original = np.concatenate((pts_RV, pts_index), axis=0)
-    warp = np.concatenate((pts_RV, pts), axis=0)
-    print(pts.shape, pts_index.shape)
-    volume_original = gen_discretized_event_volume(events=torch.from_numpy(pts_index), vol_size=[10, 480, 640])
-    volume_warp = gen_discretized_event_volume(events=torch.from_numpy(pts_RV
-                                                                       ), vol_size=[10, 480, 640])
-    image_warp = gen_event_images(volume_warp[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
-    image_original = gen_event_images(volume_original[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
+    start_index = 2000
+    for idx in range(start_index, 100000000):
+        pts, pts_index, pts_RV, flag = generate_warp(start_index, idx, events, meta)
+        if flag == 0:
+            break
+        print(pts[:, 0].min(), pts[:, 0].max())
+        print(pts[:, 1].min(), pts[:, 1].max())
+        # print(pts_RV.shape, pts_index.shape, pts.shape)
+        # print(pts.shape, pts_index.shape)
+        volume_original = gen_discretized_event_volume(events=torch.from_numpy(pts_index), vol_size=[10, 480, 640])
+        volume_warp = gen_discretized_event_volume(events=torch.from_numpy(pts), vol_size=[10, 480, 640])
+        volume_RV = gen_discretized_event_volume(events=torch.from_numpy(pts_RV), vol_size=[10, 480, 640])
+        image_warp = gen_event_images(volume_warp[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
+        image_original = gen_event_images(volume_original[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
+        image_RV = gen_event_images(volume_RV[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
     # print(image.shape)
-    cv.imshow('image', np.concatenate((image_original.T, image_warp.T), axis=1))
-    cv.waitKey(0)
-    cv.destroyWindow()
+    # cv.imshow('image', np.concatenate((image_RV.T, image_original.T, image_warp.T), axis=1))
+    # cv.waitKey(0)
+    # cv.destroyWindow()
