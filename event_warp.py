@@ -115,8 +115,8 @@ if __name__ == '__main__':
     # print(events.shape)
     meta, depth, mask = load_data(path, format='evimo2v2')
     start_index = 2000
-    fourcc = cv.VideoWriter_fourcc(*'MJPG') 
-    video = cv.VideoWriter('video.avi', fourcc, 5, (480, 640))
+    # fourcc = cv.VideoWriter_fourcc(*'MJPG') 
+    video = cv.VideoWriter('video.avi', -1, 5.0, (480, 640))
     for idx in range(start_index, start_index+20):
         pts, pts_index, pts_RV, flag = generate_warp(start_index, idx, events, meta)
         if flag == 0:
