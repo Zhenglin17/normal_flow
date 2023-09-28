@@ -1,4 +1,4 @@
-path = '/Users/zhenglin/Documents/normal_flow/scene_03_00_000000'
+path = '/home/zhenglin/Documents/left_camera/sfm/eval/scene_03_00_000000'
 
 import numpy as np
 import os
@@ -60,7 +60,7 @@ class Interval_warp():
         T_wc1 = np.array([T_1['x'], T_1['y'], T_1['z']])
         T_wc2 = np.array([T_2['x'], T_2['y'], T_2['z']])
         R_c1c2 = R_wc1.T @ R_wc2
-        print(R_c1c2)
+        # print(R_c1c2)
         return R_c1c2
 
     def warp_events(self):
@@ -112,23 +112,29 @@ if __name__ == '__main__':
     # print(xy[0].max(), xy[1].max())
     # print(xy[0].min(), xy[1].min())
     events = np.concatenate((xy[:, 0].reshape(-1, 1), xy[:, 1].reshape(-1, 1), t.reshape(-1, 1), p.reshape(-1, 1)), axis=1)
-    print(events.shape)
+    # print(events.shape)
     meta, depth, mask = load_data(path, format='evimo2v2')
     start_index = 2000
-    for idx in range(start_index, 100000000):
+    fourcc = cv.VideoWriter_fourcc(*'MJPG') 
+    video = cv.VideoWriter('video.avi', fourcc, 5, (480, 640))
+    for idx in range(start_index, start_index+20):
         pts, pts_index, pts_RV, flag = generate_warp(start_index, idx, events, meta)
         if flag == 0:
             break
-        print(pts[:, 0].min(), pts[:, 0].max())
-        print(pts[:, 1].min(), pts[:, 1].max())
+        volume = gen_discretized_event_volume(events=torch.from_numpy(pts), vol_size=[10, 480, 640])
+        image = gen_event_images(volume[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0).T
+        image = np.uint8(image)
+        # print(image.shape)
+        video.write(image)
+    video.release()
+    cv.destroyAllWindows()
+
+        # print(pts[:, 0].min(), pts[:, 0].max())
+        # print(pts[:, 1].min(), pts[:, 1].max())
         # print(pts_RV.shape, pts_index.shape, pts.shape)
         # print(pts.shape, pts_index.shape)
-        volume_original = gen_discretized_event_volume(events=torch.from_numpy(pts_index), vol_size=[10, 480, 640])
-        volume_warp = gen_discretized_event_volume(events=torch.from_numpy(pts), vol_size=[10, 480, 640])
-        volume_RV = gen_discretized_event_volume(events=torch.from_numpy(pts_RV), vol_size=[10, 480, 640])
-        image_warp = gen_event_images(volume_warp[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
-        image_original = gen_event_images(volume_original[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
-        image_RV = gen_event_images(volume_RV[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
+        # volume_original = gen_discretized_event_volume(events=torch.from_numpy(pts_index), vol_size=[10, 480, 640])
+        # image_original = gen_event_images(volume_original[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
     # print(image.shape)
     # cv.imshow('image', np.concatenate((image_RV.T, image_original.T, image_warp.T), axis=1))
     # cv.waitKey(0)
