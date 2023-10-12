@@ -60,13 +60,6 @@
 # To use this converter standalone, make a python 3 environment and in it
 # pip install argparse numpy scipy opencv-python easygui tqdm
 #
-# History:
-# 01-21-22 - Levi Burner - Created file
-# 01-29-22 - Tobi Delbruck - corrected to match MVSEC NPZ flow output contents for mono camera recordings from MVSEC, added multiple file option
-# 01-30-22 - Levi Burner - Fixed to handle moving objects correctly and fixed bug in radtan model
-# 04-26-22 - Levi Burner - Support EVIMO2v2 format
-# 08-23-22 - Levi Burner - Add classical camera reprojection for EVIMO2v2 format
-#
 ###############################################################################
 
 import argparse
