@@ -55,8 +55,6 @@
 #
 # Missing depth values (walls of room) are filled with NaN
 # The timestamps can skip values when the VICON has lost lock on one or more objects from occulusion or too rapid motion.
-#
-#
 # To use this converter standalone, make a python 3 environment and in it
 # pip install argparse numpy scipy opencv-python easygui tqdm
 #
