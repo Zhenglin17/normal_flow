@@ -95,3 +95,13 @@ def gen_discretized_event_volume(events, vol_size):
     volume.view(-1).put_(inds_ce, vals_ce, accumulate=True)
 
     return volume
+
+
+
+import socket
+def path():
+    hostname = socket.gethostname()
+    if 'wireless-10-104-43-89' in hostname:
+        path = '/Users/zhenglin/Documents/scene_03_00_000000'
+    else: path = '/home/zhenglin/Documents/left_camera/sfm/eval/scene_03_00_000000'
+    return path
