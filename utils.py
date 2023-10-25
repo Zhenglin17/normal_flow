@@ -101,7 +101,8 @@ def gen_discretized_event_volume(events, vol_size):
 import socket
 def path():
     hostname = socket.gethostname()
-    if 'wireless-10-104-43-89' in hostname:
+    print(hostname)
+    if 'wireless-10' in hostname:
         path = '/Users/zhenglin/Documents/scene_03_00_000000'
     else: path = '/home/zhenglin/Documents/left_camera/sfm/eval/scene_03_00_000000'
     return path
