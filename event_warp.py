@@ -126,7 +126,7 @@ if __name__ == '__main__':
         if flag == 0:
             break
         volume = gen_discretized_event_volume(events=torch.from_numpy(pts), vol_size=[10, 480, 640])
-        image = gen_event_images(volume[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0).T
+        image = gen_event_images(volume[None, :, :, :], 'gen')['gen_event_time_image'][0].numpy().sum(0)
         # print(image.min(), image.max())
         image = 255*image
         image = np.uint8(image)
